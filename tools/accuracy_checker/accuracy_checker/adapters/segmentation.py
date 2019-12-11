@@ -143,7 +143,7 @@ class BrainTumorSegmentationAdapter(Adapter):
                     raise ValueError("Labels quantity from 'rearrange_output' option differs from"
                                      "output channel quantity ({} vs ({},:,:,:))"
                                      .format(len(self.rearrange_output), output.shape[0]))
-                output = self._rearragne_output(output)
+                output = self._rearrange_output(output)
             result.append(BrainTumorSegmentationPrediction(identifier, output, self.label_order))
 
         return result
@@ -160,7 +160,7 @@ class BrainTumorSegmentationAdapter(Adapter):
 
         return output_map
 
-    def _rearragne_output(self, output):
+    def _rearrange_output(self, output):
         mask = output > 0.5
         result = np.zeros(output.shape, dtype=int8)
         for i in range(mask.shape[0]):
