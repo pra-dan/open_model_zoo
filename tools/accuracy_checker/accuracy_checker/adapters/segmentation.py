@@ -17,7 +17,7 @@ limitations under the License.
 import numpy as np
 from ..adapters import Adapter
 from ..representation import SegmentationPrediction, BrainTumorSegmentationPrediction
-from ..config import ConfigValidator, BoolField, ListField, NumberField
+from ..config import ConfigError, ConfigValidator, BoolField, ListField, NumberField
 
 
 class SegmentationAdapter(Adapter):
@@ -114,6 +114,10 @@ class BrainTumorSegmentationAdapter(Adapter):
             'label_order': ListField(
                 optional=True, default=[1, 2, 3], description="Specifies order of output labels, according to "
                                                               "order of dataset labels"
+            ),
+            'rearrange_output': ListField(
+                optional=True, default=None, description="Specifies labels for corresponding output channels"
+                                                       "and consistently fills resulting image with them"
             )
         })
 
@@ -122,6 +126,10 @@ class BrainTumorSegmentationAdapter(Adapter):
     def configure(self):
         self.argmax = self.get_value_from_config('make_argmax')
         self.label_order = tuple(self.get_value_from_config('label_order'))
+        self.rearrange_output = self.get_value_from_config('rearrange_output')
+        if self.argmax and self.rearrange_output is not None:
+            raise ConfigError("There is only 'make_argmax' or 'rearrange_output' option available for "
+                              "{} adapter, but found both".format(self.__provider__))
 
     def process(self, raw, identifiers=None, frame_meta=None):
         result = []
@@ -130,6 +138,12 @@ class BrainTumorSegmentationAdapter(Adapter):
         for identifier, output in zip(identifiers, raw_outputs[self.output_blob]):
             if self.argmax:
                 output = np.argmax(output, axis=0).reshape((1,)+output.shape[1:])
+            if self.rearrange_output is not None:
+                if len(self.rearrange_output) != output.shape[0]:
+                    raise ValueError("Labels quantity from 'rearrange_output' option differs from"
+                                     "output channel quantity ({} vs ({},:,:,:))"
+                                     .format(len(self.rearrange_output), output.shape[0]))
+                output = self._rearragne_output(output)
             result.append(BrainTumorSegmentationPrediction(identifier, output, self.label_order))
 
         return result
@@ -145,3 +159,11 @@ class BrainTumorSegmentationAdapter(Adapter):
             output_map[output_key] = output_data
 
         return output_map
+
+    def _rearragne_output(self, output):
+        mask = output > 0.5
+        result = np.zeros(output.shape, dtype=int8)
+        for i in range(mask.shape[0]):
+            result[mask[i, :, :, :]] = self.rearrange_output[i]
+
+        return result
