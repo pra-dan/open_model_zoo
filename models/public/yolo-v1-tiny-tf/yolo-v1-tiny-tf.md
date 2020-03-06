@@ -35,7 +35,7 @@ YOLO v1 Tiny is a real-time object detection model from TensorFlow.js\* framewor
         ```
         python keras_to_tensorflow.py --input_model=<model_in>.h5 --output_model=<model_out>.pb
         ```
-
+    > Note: Conversion tested with `tensorflow==1.15.0`.
 
 ## Specification
 
