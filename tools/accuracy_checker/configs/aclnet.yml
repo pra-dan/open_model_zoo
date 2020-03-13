@@ -1,0 +1,52 @@
+models:
+  - name: aclnet
+
+    launchers:
+      - framework: dlsdk
+        tags:
+          - FP32
+        #model:   esc53_32.xml
+        #weights: esc53_32.bin
+        model:   model_esc15_32.xml
+        weights: model_esc15_32.bin
+        adapter: classification
+#        inputs:
+#          - type: INPUT
+#            name: input
+#            layout: NCDHW
+
+#      - framework: dlsdk
+#        tags:
+#          - FP16
+#        model:   intel/asl-recognition-0004/FP16/asl-recognition-0004.xml
+#        weights: intel/asl-recognition-0004/FP16/asl-recognition-0004.bin
+#        adapter: classification
+#        inputs:
+#          - type: INPUT
+#            name: input
+#            layout: NCDHW
+
+    datasets:
+      - name: wavs
+        annotation_conversion:
+          converter: imagenet
+          annotation_file: validation15.txt
+        annotation: wav.pickle
+        data_source: .
+        reader: wav_reader
+
+        preprocessing:
+          - type: clip_audio
+            size: 16000
+            quantity: 5
+          - type: normalization
+            std: 32768
+
+        metrics:
+          - type: accuracy
+            name: top@1
+            top_k: 1
+          - type: accuracy
+            name: top@5
+            top_k: 5
+#global_definitions: ../dataset_definitions.yml
