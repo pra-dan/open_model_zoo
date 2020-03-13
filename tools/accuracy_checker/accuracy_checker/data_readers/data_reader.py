@@ -17,6 +17,7 @@ limitations under the License.
 from pathlib import Path
 from functools import singledispatch
 from collections import OrderedDict, namedtuple
+from scipy.io import wavfile
 import re
 import cv2
 import numpy as np
@@ -405,3 +406,16 @@ class AnnotationFeaturesReader(BaseReader):
     def reset(self):
         self.subset = range(len(self.data_source))
         self.counter = 0
+
+
+class WavReader(BaseReader):
+    __provider__ = 'wav_reader'
+
+    def read(self, data_id):
+        sample_rate, wav = wavfile.read(str(self.data_source / data_id))
+        if len(wav.shape) == 1:
+            wav = np.expand_dims(wav, axis=0)
+        return wav, {'sample_rate': sample_rate}
+
+    def read_item(self, data_id):
+        return DataRepresentation(*self.read_dispatcher(data_id), identifier=data_id)
