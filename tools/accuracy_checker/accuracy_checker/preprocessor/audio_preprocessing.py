@@ -38,12 +38,9 @@ class ResampleAudio(Preprocessor):
 
     def process(self, image, annotation_meta=None):
         try:
-            sample_rate = annotation_meta['sample_rate']
+            sample_rate = image.metadata['sample_rate']
         except KeyError:
             raise RuntimeError('Operation "{}" can\'t resample audio: required original samplerate in metadata.'.
-                               format(self.__provider__))
-        except AttributeError:
-            raise RuntimeError('Operation "{}" can\'t resample audio: required annotation metadata.'.
                                format(self.__provider__))
 
         if sample_rate == self.sample_rate:
@@ -51,10 +48,11 @@ class ResampleAudio(Preprocessor):
 
         data = image.data
         duration = data.shape[1] / sample_rate
-        resampled_data = np.zeros(shape=(1, duration*self.sample_rate), dtype=float)
+        resampled_data = np.zeros(shape=(data.shape[0], int(duration*self.sample_rate)), dtype=float)
         x_old = np.linspace(0, duration, data.shape[1])
         x_new = np.linspace(0, duration, resampled_data.shape[1])
-        resampled_data = np.interp(x_new, x_old, data)
+        print(type(data), type(data[0]), data.shape, data[0].shape)
+        resampled_data[0] = np.interp(x_new, x_old, data[0])
 
         image.data = resampled_data
         image.metadata['sample_rate'] = self.sample_rate
@@ -71,7 +69,7 @@ class ClipAudio(Preprocessor):
         parameters.update({
             'size': NumberField(
                 value_type=int, min_value=0,
-                description="Length of audio clip in milliseconds."
+                description="Length of audio clip in seconds."
             ),
             'max_clips': NumberField(
                 value_type=int, min_value=1, description="Maximum number of clips per audiofile."
@@ -85,13 +83,18 @@ class ClipAudio(Preprocessor):
 
     def process(self, image, annotation_meta=None):
         data = image.data
-        audio_size = data.shape[1]
+        try:
+            sample_rate = image.metadata['sample_rate']
+        except KeyError:
+            raise RuntimeError('Operation "{}" failed: required "sample rate" in metadata.'.
+                               format(self.__provider__))
+        audio_duration = data.shape[1]
+        clip_duration = self.size * sample_rate
         clipped_data = []
         for i in range(self.max_clips):
-            if (i + 1)*self.size <= audio_size:
-                clip = data[:, i * self.size: (i+1) * self.size]
-            else:
+            if (i + 1) * clip_duration > audio_duration:
                 break
+            clip = data[:, i * clip_duration: (i+1) * clip_duration]
             clipped_data.append(clip)
         image.data = clipped_data
         image.metadata['multi_infer'] = True
