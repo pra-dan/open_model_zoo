@@ -36,9 +36,11 @@ models:
         reader: wav_reader
 
         preprocessing:
+          - type: resample_audio
+            sample_rate: 16000
           - type: clip_audio
-            size: 16000
-            quantity: 5
+            size: 1
+            max_clips: 5
           - type: normalization
             std: 32768
 
