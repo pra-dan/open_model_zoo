@@ -53,7 +53,7 @@ class ClassificationAdapter(Adapter):
         Returns:
             list of ClassificationPrediction objects
         """
-        multi_infer = frame_meta[-1].get('multi_infer', False) if meta else False
+        multi_infer = frame_meta[-1].get('multi_infer', False) if frame_meta else False
         prediction = self._extract_predictions(raw, multi_infer)[self.output_blob]
         if multi_infer:
             prediction = np.mean(prediction, axis=0)
