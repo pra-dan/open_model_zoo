@@ -63,6 +63,8 @@ from .monocular_depth_perception import ReDWebDatasetConverter
 from .fashion_mnist import FashionMnistConverter
 from .inpainting import InpaintingConverter
 
+from .esc_converter import EscFormatConverter
+
 __all__ = [
     'BaseFormatConverter',
     'make_subset',
@@ -115,5 +117,6 @@ __all__ = [
     'MSASLContiniousConverter',
     'ReDWebDatasetConverter',
     'FashionMnistConverter',
-    'InpaintingConverter'
+    'InpaintingConverter',
+    'EscFormatConverter'
 ]
