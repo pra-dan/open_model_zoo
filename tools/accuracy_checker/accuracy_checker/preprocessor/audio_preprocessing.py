@@ -51,7 +51,6 @@ class ResampleAudio(Preprocessor):
         resampled_data = np.zeros(shape=(data.shape[0], int(duration*self.sample_rate)), dtype=float)
         x_old = np.linspace(0, duration, data.shape[1])
         x_new = np.linspace(0, duration, resampled_data.shape[1])
-        print(type(data), type(data[0]), data.shape, data[0].shape)
         resampled_data[0] = np.interp(x_new, x_old, data[0])
 
         image.data = resampled_data

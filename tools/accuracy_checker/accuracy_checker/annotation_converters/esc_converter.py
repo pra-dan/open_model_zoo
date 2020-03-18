@@ -54,9 +54,9 @@ class EscFormatConverter(BaseFormatConverter):
         annotation = []
         content_errors = [] if check_content else None
         original_annotation = read_txt(get_path(self.annotation_file))
-        num_iterations = len(original_annotation)
-        for audio_id, audio in enumerate(original_annotation):
-            info = AudioInfo(audio.split(','))
+        num_iterations = len(original_annotation[1:])
+        for audio_id, audio in enumerate(original_annotation[1:]):
+            info = AudioInfo(*audio.split(','))
             if int(info.fold) != self.fold and self.fold != -1:
                 continue
             if check_content:
