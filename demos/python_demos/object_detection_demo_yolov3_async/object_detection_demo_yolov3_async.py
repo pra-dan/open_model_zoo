@@ -110,6 +110,13 @@ def scale_bbox(x, y, h, w, class_id, confidence, h_scale, w_scale):
 
 
 def parse_yolo_region(blob, resized_image_shape, original_im_shape, params, threshold):
+    def argmax(array):
+        index, max_val = -1, -1
+        for i, val in enumerate(array):
+            if val > max_val:
+                index, max_val = i, val
+        return index
+
     # ------------------------------------------ Validating output parameters ------------------------------------------
     _, _, out_blob_h, out_blob_w = blob.shape
     assert out_blob_w == out_blob_h, "Invalid size of output blob. It sould be in NCHW layout and height should " \
@@ -146,14 +153,18 @@ def parse_yolo_region(blob, resized_image_shape, original_im_shape, params, thre
             # Depends on topology we need to normalize sizes by feature maps (up to YOLOv3) or by input shape (YOLOv3)
             w = w_exp * params.anchors[2 * n] / (resized_image_w if params.isYoloV3 else params.side)
             h = h_exp * params.anchors[2 * n + 1] / (resized_image_h if params.isYoloV3 else params.side)
+            classes = []
             for j in range(params.classes):
                 class_index = entry_index(params.side, params.coords, params.classes, n * side_square + i,
                                           params.coords + 1 + j)
-                confidence = scale * predictions[class_index]
-                if confidence < threshold:
-                    continue
-                objects.append(scale_bbox(x=x, y=y, h=h, w=w, class_id=j, confidence=confidence,
-                                          h_scale=orig_im_h, w_scale=orig_im_w))
+                classes.append(predictions[class_index])
+
+            label = argmax(classes)
+            confidence = classes[label]*scale
+            if confidence < threshold:
+                continue
+            objects.append(scale_bbox(x=x, y=y, h=h, w=w, class_id=label, confidence=confidence,
+                                      h_scale=orig_im_h, w_scale=orig_im_w))
     return objects
 
 
@@ -310,8 +321,10 @@ def main():
         presenter.drawGraphs(frame)
         for obj in objects:
             # Validation bbox of detected object
-            if obj['xmax'] > origin_im_size[1] or obj['ymax'] > origin_im_size[0] or obj['xmin'] < 0 or obj['ymin'] < 0:
-                continue
+            obj['xmax'] = min(obj['xmax'], origin_im_size[1])
+            obj['ymax'] = min(obj['ymax'], origin_im_size[0])
+            obj['xmin'] = max(obj['xmin'], 0)
+            obj['ymin'] = max(obj['ymin'], 0)
             color = (int(min(obj['class_id'] * 12.5, 255)),
                      min(obj['class_id'] * 7, 255), min(obj['class_id'] * 5, 255))
             det_label = labels_map[obj['class_id']] if labels_map and len(labels_map) >= obj['class_id'] else \
