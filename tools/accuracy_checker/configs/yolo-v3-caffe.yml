@@ -1,0 +1,59 @@
+models:
+  - name: yolo-v3-caffe
+
+    launchers:
+      - framework: dlsdk
+        tag:
+          - FP32
+        model:   intel/yolo-v3-caffe/FP32/yolo-v3-caffe.xml
+        weights: intel/yolo-v3-caffe/FP32/yolo-v3-caffe.bin
+        cpu_extensions: AUTO
+        adapter:
+          type: yolo_v3
+          anchors: yolo_v3
+          num: 3
+          coord: 4
+          classes: 80
+          threshold: 0.001
+
+      - framework: dlsdk
+        tags:
+         - FP16
+        device: GPU
+        model:   intel/yolo-v3-caffe/FP16/yolo-v3-caffe.xml
+        weights: intel/yolo-v3-caffe/FP16/yolo-v3-caffe.bin
+        adapter:
+          type: yolo_v3
+          anchors: yolo_v3
+          num: 3
+          coord: 4
+          classes: 80
+          threshold: 0.001
+
+    datasets:
+      - name: ms_coco_detection_80_class_without_background
+
+        preprocessing:
+          - type: bgr_to_rgb
+          - type: resize
+            size: 416
+          - type: normalization
+            std: 255.0
+
+        postprocessing:
+          - type: resize_prediction_boxes
+          - type: filter
+            apply_to: prediction
+            min_confidence: 0.001
+            remove_filtered: True
+          - type: nms
+            overlap: 0.5
+          - type: clip_boxes
+            apply_to: prediction
+
+        metrics:
+          - type: coco_precision
+            max_detections: 100
+            threshold: .5
+
+global_definitions: ../dataset_definitions.yml
