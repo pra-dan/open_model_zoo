@@ -31,6 +31,8 @@ from openvino.inference_engine import IECore
 
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'common'))
 import monitors
+# 'monitors' is a local cpp-library, it can be built with cpp demos via "build_demos.sh" or "build_demos_msvc.bat"
+#  script in demos dir.
 
 
 logging.basicConfig(format="[ %(levelname)s ] %(message)s", level=logging.INFO, stream=sys.stdout)
